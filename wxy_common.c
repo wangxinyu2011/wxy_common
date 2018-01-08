@@ -1566,3 +1566,90 @@ int get_url_info(const char *url, char *domain, int *port, char *dir)
 }
 
 
+typedef struct         
+{
+    char name[20];      
+	unsigned int user; 
+    unsigned int nice; 
+    unsigned int system;
+    unsigned int idle; 
+}CPU_OCCUPY;
+
+
+int cal_cpuoccupy (CPU_OCCUPY *o, CPU_OCCUPY *n) 
+{   
+    unsigned long od, nd;    
+    unsigned long id, sd;
+    int cpu_use = 0;   
+    
+    od = (unsigned long) (o->user + o->nice + o->system +o->idle);
+    nd = (unsigned long) (n->user + n->nice + n->system +n->idle);
+      
+    id = (unsigned long) (n->user - o->user);    
+    sd = (unsigned long) (n->system - o->system);
+    if((nd-od) != 0)
+        cpu_use = (int)((sd+id)*100)/(nd-od);
+    else 
+        cpu_use = 0;
+    //printf("cpu: %u/n",cpu_use);
+    return cpu_use;
+}
+
+void get_cpuoccupy (CPU_OCCUPY *cpust)
+{   
+    FILE *fd;         
+    char buff[256]; 
+    CPU_OCCUPY *cpu_occupy;
+    cpu_occupy=cpust;
+                                                                                                               
+    fd = fopen ("/proc/stat", "r"); 
+    fgets (buff, sizeof(buff), fd);
+    
+    sscanf (buff, "%s %u %u %u %u", cpu_occupy->name, &cpu_occupy->user, &cpu_occupy->nice,&cpu_occupy->system, &cpu_occupy->idle);
+    
+    fclose(fd);     
+}
+
+/*
+    Return : CPU use percent 
+*/
+int get_cpu_use()
+{
+    unsigned int cpu = 0;
+    CPU_OCCUPY cpu_stat1;
+    CPU_OCCUPY cpu_stat2;    
+    
+    
+    get_cpuoccupy((CPU_OCCUPY *)&cpu_stat1);
+    usleep(10*1000);
+
+ 
+    get_cpuoccupy((CPU_OCCUPY *)&cpu_stat2);
+
+     
+    cpu = cal_cpuoccupy ((CPU_OCCUPY *)&cpu_stat1, (CPU_OCCUPY *)&cpu_stat2);
+
+    return cpu > 99 ? 90 : cpu;
+}
+/*
+    Get memory total and Free.
+
+    Output :  (KB)
+*/
+void get_memoccupy (unsigned int *mem_total,unsigned int *mem_free)
+{
+    FILE *fd;                    
+    char buff[256];   
+
+                                                                                                              
+    fd = fopen ("/proc/meminfo", "r"); 
+      
+    fgets (buff, sizeof(buff), fd); 
+    sscanf (buff, "%*s %u %*s", mem_total); 
+    
+    fgets (buff, sizeof(buff), fd);
+    sscanf (buff, "%*s %u %*s", mem_free); 
+    
+    fclose(fd);     
+}
+
