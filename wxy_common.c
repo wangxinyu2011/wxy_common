@@ -1547,25 +1547,29 @@ match_process:
 /*
 	url : "http://www.xx.com.cn:8000/asdf/bin.bin";
 */
-int get_url_info(const char *url, char *domain, int *port, char *dir)
+int get_path_url(char *upgradePath, char *host, int *port, char *url)
 {
+    int ret = 0;
+    char buff[128] = {0};
     char *p;
-    int ret;
 
-    if(p = strstr(url, "http://"))
-        p += strlen("http://");
+    if(upgradePath == NULL || host == NULL || port == NULL ||  url == NULL)
+        return -1;
+    /*http://120.24.90.5:5018/download/Device/banner3.png */
 
+    p = upgradePath;
     *port = 80;
 
-    if(strchr(p, ':'))
-        ret = sscanf(p, "%[^:]:%d%s", domain, port, dir);
+    if(strstr(p, "http://"))
+        p += strlen("http://");
+
+    if(strstr(p, ":"))
+        ret = sscanf(p, "%[^:]:%d%s", host, port, url);
     else
-        ret = sscanf(p, "%[^/]%s", domain, dir);
+        ret = sscanf(p, "%[^/]%s", host, url);
 
-    return ret == 2 || ret == 3;
+    return 0;
 }
-
-
 typedef struct         
 {
     char name[20];      

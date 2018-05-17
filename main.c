@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	char ip[64] = {0};
 	int mtu = -1;
 	
-	ret = getIf_Ip("eth1", ip);
+	ret = getInterfaceIp("eth1", ip);
 
 	printf("ret = %d, ip=%s\n", ret , ip);
 
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 	else
 		printf("Exist\n");
 
-	printf("ppp1 mtu=%d\n", getIf_MTU("ppp1", &mtu));
+	printf("ppp1 mtu=%d\n", getIfMTU("eth1", &mtu));
 
 	return 0;
 
