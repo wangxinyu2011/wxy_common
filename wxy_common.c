@@ -24,6 +24,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include <signal.h>
 #include <unistd.h>
@@ -1359,7 +1360,7 @@ static int hex2byte(const char *hex)
  * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
  * Returns: 0 on success, -1 on failure (e.g., string not a MAC address)
  */
-int hwaddr_aton(const char *txt, u8 *addr)
+int hwaddr_aton(const char *txt, unsigned  *addr)
 {
     int i;
 
@@ -1388,7 +1389,7 @@ int hwaddr_aton(const char *txt, u8 *addr)
  * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
  * Returns: Characters used (> 0) on success, -1 on failure
  */
-int hwaddr_aton2(const char *txt, u8 *addr)
+int hwaddr_aton2(const char *txt, unsigned char *addr)
 {
     int i;
     const char *pos = txt;
@@ -1421,12 +1422,12 @@ int hwaddr_aton2(const char *txt, u8 *addr)
  * this size
  * Returns: 0 on success, -1 on failure (invalid hex string)
  */
-int hexstr2bin(const char *hex, u8 *buf, size_t len)
+int hexstr2bin(const char *hex, unsigned char *buf, size_t len)
 {
     size_t i;
     int a;
     const char *ipos = hex;
-    u8 *opos = buf;
+    unsigned char *opos = buf;
 
     for (i = 0; i < len; i++)
     {
@@ -1449,7 +1450,7 @@ int hexstr2bin(const char *hex, u8 *buf, size_t len)
  * rolling over to more significant bytes if the byte was incremented from
  * 0xff to 0x00.
  */
-void inc_byte_array(u8 *counter, size_t len)
+void inc_byte_array(unsigned char *counter, size_t len)
 {
     int pos = len - 1;
     while (pos >= 0)
@@ -1570,67 +1571,67 @@ int get_path_url(char *upgradePath, char *host, int *port, char *url)
 
     return 0;
 }
-typedef struct         
+typedef struct
 {
-    char name[20];      
-	unsigned int user; 
-    unsigned int nice; 
+    char name[20];
+    unsigned int user;
+    unsigned int nice;
     unsigned int system;
-    unsigned int idle; 
-}CPU_OCCUPY;
+    unsigned int idle;
+} CPU_OCCUPY;
 
 
-int cal_cpuoccupy (CPU_OCCUPY *o, CPU_OCCUPY *n) 
-{   
-    unsigned long od, nd;    
+int cal_cpuoccupy (CPU_OCCUPY *o, CPU_OCCUPY *n)
+{
+    unsigned long od, nd;
     unsigned long id, sd;
-    int cpu_use = 0;   
-    
-    od = (unsigned long) (o->user + o->nice + o->system +o->idle);
-    nd = (unsigned long) (n->user + n->nice + n->system +n->idle);
-      
-    id = (unsigned long) (n->user - o->user);    
+    int cpu_use = 0;
+
+    od = (unsigned long) (o->user + o->nice + o->system + o->idle);
+    nd = (unsigned long) (n->user + n->nice + n->system + n->idle);
+
+    id = (unsigned long) (n->user - o->user);
     sd = (unsigned long) (n->system - o->system);
-    if((nd-od) != 0)
-        cpu_use = (int)((sd+id)*100)/(nd-od);
-    else 
+    if((nd - od) != 0)
+        cpu_use = (int)((sd + id) * 100) / (nd - od);
+    else
         cpu_use = 0;
     //printf("cpu: %u/n",cpu_use);
     return cpu_use;
 }
 
 void get_cpuoccupy (CPU_OCCUPY *cpust)
-{   
-    FILE *fd;         
-    char buff[256]; 
+{
+    FILE *fd;
+    char buff[256];
     CPU_OCCUPY *cpu_occupy;
-    cpu_occupy=cpust;
-                                                                                                               
-    fd = fopen ("/proc/stat", "r"); 
+    cpu_occupy = cpust;
+
+    fd = fopen ("/proc/stat", "r");
     fgets (buff, sizeof(buff), fd);
-    
-    sscanf (buff, "%s %u %u %u %u", cpu_occupy->name, &cpu_occupy->user, &cpu_occupy->nice,&cpu_occupy->system, &cpu_occupy->idle);
-    
-    fclose(fd);     
+
+    sscanf (buff, "%s %u %u %u %u", cpu_occupy->name, &cpu_occupy->user, &cpu_occupy->nice, &cpu_occupy->system, &cpu_occupy->idle);
+
+    fclose(fd);
 }
 
 /*
-    Return : CPU use percent 
+    Return : CPU use percent
 */
 int get_cpu_use()
 {
     unsigned int cpu = 0;
     CPU_OCCUPY cpu_stat1;
-    CPU_OCCUPY cpu_stat2;    
-    
-    
-    get_cpuoccupy((CPU_OCCUPY *)&cpu_stat1);
-    usleep(10*1000);
+    CPU_OCCUPY cpu_stat2;
 
- 
+
+    get_cpuoccupy((CPU_OCCUPY *)&cpu_stat1);
+    usleep(10 * 1000);
+
+
     get_cpuoccupy((CPU_OCCUPY *)&cpu_stat2);
 
-     
+
     cpu = cal_cpuoccupy ((CPU_OCCUPY *)&cpu_stat1, (CPU_OCCUPY *)&cpu_stat2);
 
     return cpu > 99 ? 90 : cpu;
@@ -1640,20 +1641,130 @@ int get_cpu_use()
 
     Output :  (KB)
 */
-void get_memoccupy (unsigned int *mem_total,unsigned int *mem_free)
+void get_memoccupy (unsigned int *mem_total, unsigned int *mem_free)
 {
-    FILE *fd;                    
-    char buff[256];   
+    FILE *fd;
+    char buff[256];
 
-                                                                                                              
-    fd = fopen ("/proc/meminfo", "r"); 
-      
-    fgets (buff, sizeof(buff), fd); 
-    sscanf (buff, "%*s %u %*s", mem_total); 
-    
+
+    fd = fopen ("/proc/meminfo", "r");
+
     fgets (buff, sizeof(buff), fd);
-    sscanf (buff, "%*s %u %*s", mem_free); 
-    
-    fclose(fd);     
+    sscanf (buff, "%*s %u %*s", mem_total);
+
+    fgets (buff, sizeof(buff), fd);
+    sscanf (buff, "%*s %u %*s", mem_free);
+
+    fclose(fd);
 }
 
+unsigned long resolve_dns_ipv4(char *host_name)
+{
+    struct hostent *host = NULL;
+    struct in_addr addr;
+    char **pp;
+
+    host = gethostbyname(host_name);
+    if (host == NULL)
+    {
+        printf("gethostbyname %s failed\n", host_name);
+        return 0;
+    }
+
+    pp = host->h_addr_list;
+
+    if (*pp != NULL)
+    {
+        addr.s_addr = *((unsigned int *)*pp);
+        printf("address is %s\n", inet_ntoa(addr));
+        pp++;
+        return addr.s_addr;
+    }
+
+    return 1;
+}
+
+int ip_to_hostname(const char *ip)
+{
+    int ret = 0;
+
+    if(!ip)
+    {
+        printf("invalid params\n");
+        return -1;
+    }
+
+    struct addrinfo hints;
+    struct addrinfo *res, *res_p;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_CANONNAME | AI_NUMERICHOST;
+    hints.ai_protocol = 0;
+
+    ret = getaddrinfo(ip, NULL, &hints, &res);
+    if(ret != 0)
+    {
+        printf("getaddrinfo: %s\n", gai_strerror(ret));
+        return -1;
+    }
+
+    for(res_p = res; res_p != NULL; res_p = res_p->ai_next)
+    {
+        char host[1024] = {0};
+        ret = getnameinfo(res_p->ai_addr, res_p->ai_addrlen, host, sizeof(host), NULL, 0, NI_NAMEREQD);
+        if(ret != 0)
+        {
+            printf("getnameinfo: %s\n", gai_strerror(ret));
+        }
+        else
+        {
+            printf("hostname: %s\n", host);
+        }
+    }
+
+    freeaddrinfo(res);
+    return ret;
+}
+int hostname_to_ip(const char *hostname)
+{
+    int ret = 0;
+
+    if(!hostname)
+    {
+        printf("invalid params\n");
+        return -1;
+    }
+
+    struct addrinfo hints;
+    struct addrinfo *res, *res_p;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_CANONNAME;
+    hints.ai_protocol = 0;
+
+    ret = getaddrinfo(hostname, NULL, &hints, &res);
+    if(ret != 0)
+    {
+        printf("getaddrinfo: %s\n", gai_strerror(ret));
+        return -1;
+    }
+
+    for(res_p = res; res_p != NULL; res_p = res_p->ai_next)
+    {
+        char host[1024] = {0};
+        ret = getnameinfo(res_p->ai_addr, res_p->ai_addrlen, host, sizeof(host), NULL, 0, NI_NUMERICHOST);
+        if(ret != 0)
+        {
+            printf("getnameinfo: %s\n", gai_strerror(ret));
+        }
+        else
+        {
+            printf("ip: %s\n", host);
+        }
+    }
+
+    freeaddrinfo(res);
+    return ret;
+}
